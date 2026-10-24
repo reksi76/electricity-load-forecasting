@@ -4,7 +4,7 @@ from sklearn.linear_model import LinearRegression
 import pandas as pd 
 
 
-def persistence_method(df, zones, horizon, split_idx, daily_period):
+def persistence_method(df, zones, horizon, split_idx):
     results = []
 
     for zone in zones:
@@ -29,11 +29,11 @@ def persistence_method(df, zones, horizon, split_idx, daily_period):
             })
 
 
-    baseline_results = pd.DataFrame(results)
+    # baseline_results = pd.DataFrame(results)
     # print(baseline_results.to_string(index=False))
     return results
 
-def seasonal_persistence_method(df, zones, horizon, split_idx):
+def seasonal_persistence_method(df, zones, horizon, split_idx, daily_period):
     results = []
 
     for zone in zones:
@@ -56,8 +56,8 @@ def seasonal_persistence_method(df, zones, horizon, split_idx):
             'Jumlah pengujian' : int(valid.sum())
             })
 
-    seasonal_result = pd.DataFrame(results)
-    print(seasonal_result.to_string(index=False))
+    # seasonal_result = pd.DataFrame(results)
+    # print(seasonal_result.to_string(index=False))
     return results
 
 
@@ -85,8 +85,8 @@ def moving_average_method(df, zones, horizon, split_idx):
             'Jumlah pengujian' : int(valid.sum())
             })
 
-    moving_average_results = pd.DataFrame(results)
-    print(moving_average_results.to_string(index=False))
+    # moving_average_results = pd.DataFrame(results)
+    # print(moving_average_results.to_string(index=False))
     return results
 
 
