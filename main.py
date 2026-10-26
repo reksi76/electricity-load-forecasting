@@ -62,14 +62,15 @@ for zone, threshold in thresholds.items():
     print(f'Prediksi: {alert['Prediction']:.2f}')
     print('Pesan:', alert['Message'])
 
-evaluate_high_load_alerts(
-    df,
-    zones, 
-    horizon,
-    daily_period,
-    split_idx,
-    percentile
-    )
+comparison = evaluate_high_load_alerts(
+        df,
+        zones, 
+        horizon,
+        daily_period,
+        split_idx,
+        percentile
+        )
+print(comparison)
 
 
         
