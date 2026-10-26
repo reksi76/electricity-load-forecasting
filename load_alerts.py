@@ -1,29 +1,31 @@
 import pandas as pd 
 
-def calculate_high_load_treshold(df, zones, split_idx, percentile=95):
-    treshold = {}
+def calculate_high_load_thresholds(df, zones, split_idx, percentile):
+    thresholds = {}
 
     for zone in zones:
-        train_consumption = df['zone'].iloc[:split_idx].dropna()
+        train_consumption = df[zone].iloc[:split_idx].dropna()
 
-        treshold[zone] = train_consumption.quantile(
+        thresholds[zone] = train_consumption.quantile(
                 percentile/100
                 )
 
-        return treshold
+    return thresholds
 
-def detect_high_load(prediction, treshold):
-    if predicition >= treshold:
+def detect_high_load(threshold):
+    prediction = threshold * 1.02
+    print(prediction)
+    if prediction >= threshold:
         return {
                 'Status' : 'HIGH LOAD',
                 'Prediction' : prediction,
-                'Treshold' : treshold,
+                'Treshold' : threshold,
                 'Message' : 'Prediksi konsumsi mencapai atau melampaui ambang'
                 }
 
     return {
             'Status' : 'Normal',
             'Prediction' : prediction,
-            'Treshold' : treshold,
+            'Treshold' : threshold,
             'Message' : 'Prediksi konsumsi berada di bawah ambang'
             }
