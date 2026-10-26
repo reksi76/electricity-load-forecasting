@@ -62,17 +62,23 @@ for zone, threshold in thresholds.items():
     print(f'Prediksi: {alert['Prediction']:.2f}')
     print('Pesan:', alert['Message'])
 
+
+all_results = []
+
+for model_name, results in methods.items():
+    for result in results:
+        result['Model'] = model_name
+        all_results.append(result)
+
 comparison = evaluate_high_load_alerts(
-        df,
-        zones, 
-        horizon,
-        daily_period,
-        split_idx,
-        percentile
+        all_results, 
+        thresholds
         )
+
 print(comparison)
-
-
-        
-
+comparison.to_csv(
+        'high_load_alert_evaluation.csv',
+        index=False,
+        sep=';'
+        )
 

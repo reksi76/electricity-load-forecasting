@@ -17,16 +17,22 @@ def persistence_method(df, zones, horizon, split_idx):
 
         valid = y_test.notna() & y_pred.notna()
 
+        y_actual_valid = y_test[valid]
+        y_pred_valid = y_pred[valid]
+
         mae = mean_absolute_error(
-                y_test[valid],
-                y_pred[valid]
+                y_actual_valid,
+                y_pred_valid
                 )
 
         results.append({
+            'Actual': y_actual_valid,
+            'Prediction': y_pred_valid,
             'Zone' : zone,
-            'MAE' : mae, 
+            'MAE' : mae,
             'Jumlah pengujian' : int(valid.sum())
             })
+
 
 
     # baseline_results = pd.DataFrame(results)
@@ -41,16 +47,21 @@ def seasonal_persistence_method(df, zones, horizon, split_idx, daily_period):
         prediction = df[zone].shift(daily_period - horizon)
 
         y_test = actual.iloc[split_idx:]
-        x_pred = prediction.iloc[split_idx:]
+        y_pred = prediction.iloc[split_idx:]
 
-        valid = y_test.notna() & x_pred.notna()
+        valid = y_test.notna() & y_pred.notna()
+
+        y_actual_valid = y_test[valid]
+        y_pred_valid = y_pred[valid]
 
         mae = mean_absolute_error(
-                y_test[valid],
-                x_pred[valid]
+                y_actual_valid,
+                y_pred_valid
                 )
 
         results.append({
+            'Actual': y_actual_valid,
+            'Prediction': y_pred_valid,
             'Zone' : zone,
             'MAE' : mae,
             'Jumlah pengujian' : int(valid.sum())
@@ -74,12 +85,17 @@ def moving_average_method(df, zones, horizon, split_idx):
 
         valid = y_test.notna() & y_pred.notna()
 
+        y_actual_valid = y_test[valid]
+        y_pred_valid = y_pred[valid]
+
         mae = mean_absolute_error(
-                y_test[valid],
-                y_pred[valid]
+                y_actual_valid,
+                y_pred_valid
                 )
 
-        results.append({
+        results.append({            
+            'Actual': y_actual_valid,
+            'Prediction': y_pred_valid,
             'Zone': zone, 
             'MAE' : mae,
             'Jumlah pengujian' : int(valid.sum())
@@ -139,10 +155,25 @@ def linear_regression_method(df, zones, horizon, split_idx):
         model.fit(x_train, y_train)
 
         y_pred = model.predict(x_test)
+        y_actual_valid = y_test
+        y_pred_valid = pd.Series(
+                y_pred,
+                index=y_test.index
+                )
 
-        mae = mean_absolute_error(y_test, y_pred)
+        valid = y_actual_valid.notna() & y_pred_valid.notna()
+
+        y_actual_valid = y_actual_valid[valid]
+        y_pred_valid = y_pred_valid[valid]
+
+        mae = mean_absolute_error(
+                y_actual_valid,
+                y_pred_valid
+                )
 
         results.append({
+            'Actual': y_actual_valid,
+            'Prediction': y_pred_valid,
             'Zone': zone,
             'MAE': mae,
             'Jumlah pengujian': len(y_test)
