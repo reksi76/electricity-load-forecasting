@@ -12,9 +12,9 @@ def calculate_high_load_thresholds(df, zones, split_idx, percentile):
 
     return thresholds
 
-def detect_high_load(threshold):
-    prediction = threshold * 1.02
-    print(prediction)
+def detect_high_load(prediction, threshold):
+    #prediction = threshold * 1.02
+    #print(prediction)
     if prediction >= threshold:
         return {
                 'Status' : 'HIGH LOAD',

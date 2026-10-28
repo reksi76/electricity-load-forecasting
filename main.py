@@ -7,6 +7,7 @@ from data_audit import file_info
 from compare_models import method_comparison
 from load_alerts import calculate_high_load_thresholds, detect_high_load
 from evaluate_alerts import evaluate_high_load_alerts
+from analyze_thresholds import analyze_threshold
 from methods import (
         persistence_method, 
         seasonal_persistence_method, 
@@ -53,15 +54,6 @@ print('\nAmbang konsumsi tinggi per zona:')
 thresholds = calculate_high_load_thresholds(
         df, zones, split_idx, percentile
         )
-for zone, threshold in thresholds.items():
-    # print(f'{zone} : {threshold:.2f}')
-    alert = detect_high_load(threshold)
-
-    print('\nZona:', zone)
-    print('Status:', alert['Status'])
-    print(f'Prediksi: {alert['Prediction']:.2f}')
-    print('Pesan:', alert['Message'])
-
 
 all_results = []
 
@@ -80,5 +72,9 @@ comparison.to_csv(
         'high_load_alert_evaluation.csv',
         index=False,
         sep=';'
+        )
+
+summary_df = analyze_threshold(
+        df, zones, split_idx, thresholds
         )
 
