@@ -1,13 +1,13 @@
-import sys 
-import os 
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
-
+from config import EVALUATIONS_DIR
 from data_audit import file_info
 from compare_models import method_comparison
 from load_alerts import calculate_high_load_thresholds, detect_high_load
 from evaluate_alerts import evaluate_high_load_alerts
-from analyze_thresholds import analyze_threshold
+from analyze_thresholds import (
+    plot_analyze_threshold,
+    plot_load_threshold_timeseries
+    )
+
 from methods import (
         persistence_method, 
         seasonal_persistence_method, 
@@ -69,12 +69,18 @@ comparison = evaluate_high_load_alerts(
 
 print(comparison)
 comparison.to_csv(
-        'high_load_alert_evaluation.csv',
+        EVALUATIONS_DIR
+        /'high_load_alert_evaluation.csv',
         index=False,
         sep=';'
         )
 
-summary_df = analyze_threshold(
+summary_df = plot_analyze_threshold(
         df, zones, split_idx, thresholds
         )
+
+plot_load_threshold_timeseries(
+        df, zones, split_idx, thresholds
+        )
+
 

@@ -1,9 +1,9 @@
-
+from config import DATA_PATH
 import pandas as pd
 import matplotlib.pyplot as plt
 
 # Baca dataset
-df = pd.read_csv("Tetuan City power consumption.csv")
+df = pd.read_csv(DATA_PATH)
 
 df["DateTime"] = pd.to_datetime(
     df["DateTime"],

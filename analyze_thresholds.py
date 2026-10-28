@@ -1,8 +1,10 @@
 import pandas as pd 
 import matplotlib.pyplot as plt 
 
+from config import FIGURES_DIR
 
-def analyze_threshold(
+
+def plot_analyze_threshold(
         df, zones, split_idx, thresholds
         ):
     summary = []
@@ -79,7 +81,8 @@ def analyze_threshold(
 
     plt.tight_layout()
     plt.savefig(
-            'threshold_distribution.png',
+            FIGURES_DIR
+            /'threshold_distribution.png',
             dpi=150,
             bbox_inches='tight'
             )
@@ -88,4 +91,63 @@ def analyze_threshold(
     return summary_df
 
 
+def plot_load_threshold_timeseries(
+        df, 
+        zones, 
+        split_idx,
+        thresholds, 
+        ):
+    
+    split_time = df['DateTime'].iloc[split_idx]
+
+    fig, axes = plt.subplots(
+            nrows=len(zones),
+            ncols=1,
+            figsize=(15, 12),
+            sharex=True
+            )
+
+    for ax, zone in zip(axes, zones):
+        threshold = thresholds[zone]
+
+        ax.plot(
+                df['DateTime'],
+                df[zone],
+                linewidth=0.7,
+                label='Actual Consumption',
+                )
+
+        ax.axhline(
+                threshold,
+                linestyle='--',
+                linewidth=1.5,
+                label=f"Training P95 = {threshold:2f}",
+                )
+
+        ax.axvline(
+                split_time,
+                linestyle=':',
+                linewidth=1.5,
+                label='Training/testing split'
+                )
+        
+        ax.set_title(zone)
+        ax.set_ylabel('Power Consumption')
+        ax.legend()
+        ax.grid(alpha=0.2)
+
+    axes[-1].set_xlabel('Date')
+
+    fig.suptitle(
+            'Actual Power Consumption and High-load Threshold'
+            )
+    fig.tight_layout()
+
+    fig.savefig(
+            FIGURES_DIR
+            /'load_threshold_timeseries.png',
+            dpi=150,
+            bbox_inches='tight'
+            )
+    plt.show()
 

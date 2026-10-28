@@ -1,8 +1,9 @@
 import pandas as pd 
 
-def file_info(verbose=True):
-    df = pd.read_csv('Tetuan City power consumption.csv')
+from config import DATA_PATH
 
+def file_info(verbose=True):
+    df = pd.read_csv(DATA_PATH)
     df['DateTime'] = pd.to_datetime(
             df['DateTime'],
             format = '%m/%d/%Y %H:%M',

@@ -1,6 +1,8 @@
 import pandas as pd 
 
-df = pd.read_csv('Tetuan City power consumption.csv')
+from config import DATA_PATH
+
+df = pd.read_csv(DATA_PATH)
 
 print(df.head())
 
