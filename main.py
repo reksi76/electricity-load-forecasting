@@ -7,6 +7,7 @@ from analyze_thresholds import (
     plot_analyze_threshold,
     plot_load_threshold_timeseries
     )
+from plot_forecast import plot_load_thresholds
 
 from methods import (
         persistence_method, 
@@ -17,70 +18,131 @@ from methods import (
 
 import pandas as pd
 
-df = file_info(verbose=False)
-zones = [
-        'Zone 1 Power Consumption',
-        'Zone 2 Power Consumption',
-        'Zone 3 Power Consumption'
-        ]
-horizon = 6
-daily_period = 144
-split_idx = int(len(df) * 0.8)
-percentile = 95
-
-methods = {
-        'Persistence' : persistence_method(
-            df, zones, horizon, split_idx
-            ),
-        'Seasonal Persistence' : seasonal_persistence_method(
-            df, zones, horizon, split_idx, daily_period
-            ),
-        'Moving Average' : moving_average_method(
-            df, zones, horizon, split_idx
-            ),
-        'Linear Regression' : linear_regression_method(
-            df, zones, horizon, split_idx
-            )
-    }
-
-results = method_comparison(
-        methods, df, zones, horizon, 
-        daily_period, split_idx,
-        )
-compare = pd.DataFrame(results)
-print(compare.to_string(index=False))
-
-print('\nAmbang konsumsi tinggi per zona:')
-thresholds = calculate_high_load_thresholds(
+def prepare_data():
+    df = file_info(verbose=False)
+    zones = [
+            'Zone 1 Power Consumption',
+            'Zone 2 Power Consumption',
+            'Zone 3 Power Consumption'
+            ]
+    horizon = 6
+    daily_period = 144
+    split_idx = int(len(df) * 0.8)
+    percentile = 95
+    thresholds = calculate_high_load_thresholds(
         df, zones, split_idx, percentile
+    )
+
+    return {
+            'df' : df, 
+            'zones' : zones, 
+            'horizon' : horizon, 
+            'daily_period' : daily_period, 
+            'split_idx' : split_idx, 
+            'percentile' : percentile, 
+            'thresholds' : thresholds
+            }
+
+
+def run_forecasting(
+        df, zones,  horizon, 
+        daily_period, split_idx
+        ):
+    
+    methods = {
+            'Persistence' : persistence_method(
+                df, zones, horizon, split_idx
+                ),
+            'Seasonal Persistence' : seasonal_persistence_method(
+                df, zones, horizon, split_idx, daily_period
+                ),
+            'Moving Average' : moving_average_method(
+                df, zones, horizon, split_idx
+                ),
+            'Linear Regression' : linear_regression_method(
+                df, zones, horizon, split_idx
+                )
+        }
+    return methods
+
+def main():
+    # 1. Prepare data and experiment parameters
+    data = prepare_data()
+
+    df = data['df']
+    zones = data['zones']
+    horizon = data['horizon']
+    daily_period = data['daily_period']
+    split_idx = data['split_idx']
+    thresholds = data['thresholds']
+
+    # 2. Run forecasting methods
+    methods = run_forecasting(
+        df,
+        zones,
+        horizon,
+        daily_period,
+        split_idx
+    )
+
+    # 3. Compare forecasting performance
+    results = method_comparison(
+        methods,
+        df,
+        zones,
+        horizon,
+        daily_period,
+        split_idx
         )
+    # 4. Evaluate high-load alerts 
+    all_results = []
+    for model_name, method_result in results:
+        for result in results:
+            item = result.copy()
+            item['Model'] = model_name
+            all_results.append(item)
 
-all_results = []
+    comparison = evaluate_high_load_alerts(
+            all_results, thresholds
+            )
+    #print('High load Alert Evaluation:')
+    #print(comparison.to_string(index=False)
 
-for model_name, results in methods.items():
-    for result in results:
-        result['Model'] = model_name
-        all_results.append(result)
+    comparison.to_csv(
+            EVALUATIONS_DIR/'high_load_alert_evaluation.csv',
+            index=False,
+            sep=';'
+            )
 
-comparison = evaluate_high_load_alerts(
-        all_results, 
-        thresholds
-        )
+    # 5. Analyze threshold distribution
+    summary_df = plot_analyze_threshold(
+        df,
+        zones,
+        split_idx,
+        thresholds,
+    )
 
-print(comparison)
-comparison.to_csv(
-        EVALUATIONS_DIR
-        /'high_load_alert_evaluation.csv',
-        index=False,
-        sep=';'
-        )
+    print('\nThreshold Analysis:')
+    print(summary_df.to_string(index=False))
 
-summary_df = plot_analyze_threshold(
-        df, zones, split_idx, thresholds
-        )
+    # 6. Plot actual consumption and thresholds
+    plot_load_threshold_timeseries(
+        df,
+        zones,
+        split_idx,
+        thresholds,
+    )
 
-plot_load_threshold_timeseries(
-        df, zones, split_idx, thresholds
-        )
+    # 7. Plot actual consumption, forecast, and high-load threshold
+    plot_load_thresholds(
+            df, 
+            method_result, 
+            zones, 
+            thresholds,
+            horizon,
+            days=14
+            )
 
+if __name__=='__main':
+    main()
 
