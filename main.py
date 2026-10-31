@@ -1,3 +1,5 @@
+import argparse
+
 from config import EVALUATIONS_DIR
 from data_audit import file_info
 from compare_models import method_comparison
@@ -44,10 +46,12 @@ def prepare_data():
             }
 
 
-def run_forecasting(
-        df, zones,  horizon, 
-        daily_period, split_idx
-        ):
+def run_forecasting(data):
+    df = data['df']
+    zones = data['zones']
+    horizon = data['horizon']
+    daily_period = data['daily_period']
+    split_idx = data['split_idx']
     
     methods = {
             'Persistence' : persistence_method(
@@ -65,84 +69,134 @@ def run_forecasting(
         }
     return methods
 
-def main():
-    # 1. Prepare data and experiment parameters
-    data = prepare_data()
-
-    df = data['df']
-    zones = data['zones']
-    horizon = data['horizon']
-    daily_period = data['daily_period']
-    split_idx = data['split_idx']
-    thresholds = data['thresholds']
-
-    # 2. Run forecasting methods
-    methods = run_forecasting(
-        df,
-        zones,
-        horizon,
-        daily_period,
-        split_idx
-    )
-
-    # 3. Compare forecasting performance
-    results = method_comparison(
+def run_comparison(data, methods):
+    method_comparison(
         methods,
-        df,
-        zones,
-        horizon,
-        daily_period,
-        split_idx
-        )
-    # 4. Evaluate high-load alerts 
+        data['df'],
+        data['zones'],
+        data['horizon'],
+        data['daily_period'],
+        data['split_idx']
+            )
+
+def run_alert_evaluation(data, methods):
     all_results = []
-    for model_name, method_result in results:
-        for result in results:
+
+    for model_name, method_result in methods.items():
+        for result in method_result:
             item = result.copy()
             item['Model'] = model_name
             all_results.append(item)
 
     comparison = evaluate_high_load_alerts(
-            all_results, thresholds
-            )
-    #print('High load Alert Evaluation:')
-    #print(comparison.to_string(index=False)
+        all_results,
+        data['thresholds']
+    )
+
+    output_file = EVALUATIONS_DIR / 'high_load_alert_evaluation.csv'
 
     comparison.to_csv(
-            EVALUATIONS_DIR/'high_load_alert_evaluation.csv',
-            index=False,
-            sep=';'
-            )
-
-    # 5. Analyze threshold distribution
-    summary_df = plot_analyze_threshold(
-        df,
-        zones,
-        split_idx,
-        thresholds,
+        output_file,
+        index=False,
+        sep=';'
     )
 
-    print('\nThreshold Analysis:')
+    print('\nHigh-load alert evaluation:')
+    print(comparison.to_string(index=False))
+    print(f'\nSaved to: {output_file}')
+
+def run_threshold_analysis(data):
+    summary_df = plot_analyze_threshold(
+        data['df'],
+        data['zones'],
+        data['split_idx'],
+        data['thresholds']
+    )
+
+    print('\nThreshold analysis:')
     print(summary_df.to_string(index=False))
 
-    # 6. Plot actual consumption and thresholds
     plot_load_threshold_timeseries(
-        df,
-        zones,
-        split_idx,
-        thresholds,
+        data['df'],
+        data['zones'],
+        data['split_idx'],
+        data['thresholds']
     )
 
-    # 7. Plot actual consumption, forecast, and high-load threshold
-    plot_load_thresholds(
-            df, 
-            method_result, 
-            zones, 
-            thresholds,
-            horizon,
+def run_forecast_plots(data, methods):
+    for method_name, method_result in methods.items():
+        plot_load_thresholds(
+            data['df'],
+            method_result,
+            data['zones'],
+            data['thresholds'],
+            data['horizon'],
+            method_name,
             days=14
+        )
+
+
+def run_all(data, methods):
+    run_comparison(data, methods)
+    run_alert_evaluation(data, methods)
+    run_threshold_analysis(data)
+    run_forecast_plots(data, methods)
+
+def main():
+    parser = argparse.ArgumentParser(
+            description='Electricity Load Forecasting Pipeline'
             )
 
-if __name__=='__main':
+    parser.add_argument(
+            '--stage',
+            choices=[
+                'all',
+                'forecast',
+                'comparison', 
+                'alerts',
+                'threshold',
+                'plots'
+                ],
+            default='all',
+            help = 'Pipeline stage to run'
+            )
+
+    args = parser.parse_args()
+    
+    # Prepare dataset configuration
+    data = prepare_data()
+
+    # Forecasting is required for these stages
+    if args.stage in [
+        'all',
+        'forecast',
+        'comparison',
+        'alerts',
+        'plots'
+    ]:
+        methods = run_forecasting(data)
+
+    else:
+        methods = None
+
+    if args.stage == 'all':
+        run_all(data, methods)
+
+    elif args.stage == 'forecast':
+        print('Forecasting completed')
+
+    elif args.stage == 'comparison':
+        run_comparison(data, methods)
+
+    elif args.stage == 'alerts':
+        run_alert_evaluation(data, methods)
+
+    elif args.stage == 'threshold':
+        run_threshold_analysis(data)
+
+    elif args.stage == 'plots':
+        run_forecast_plots(data, methods)
+
+if __name__=='__main__':
     main()
 

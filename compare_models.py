@@ -9,8 +9,8 @@ def method_comparison(
     for method_name, method_result in methods.items():
         for result in method_result:
             results.append({
-                    'Metode' : method_name,
-                    'Zona' : result['Zone'],
+                    'Method' : method_name,
+                    'Zone' : result['Zone'],
                     'MAE' : result['MAE'],
                     'Jumlah Pengujian' : result['Jumlah pengujian']
                     })
