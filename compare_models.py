@@ -15,8 +15,8 @@ def method_comparison(
                     'Jumlah Pengujian' : result['Jumlah pengujian']
                     })
 
-    # comparison = pd.DataFrame(result)
+    comparison = pd.DataFrame(results)
     # print(comparison.to_string(index=False))
-    return results
+    return comparison
 
 

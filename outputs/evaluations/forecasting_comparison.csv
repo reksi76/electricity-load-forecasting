@@ -1,0 +1,13 @@
+Method;Zone;MAE;Jumlah Pengujian
+Persistence;Zone 1 Power Consumption;1858.6307550658523;10478
+Persistence;Zone 2 Power Consumption;1549.1286437726665;10478
+Persistence;Zone 3 Power Consumption;956.1336839576256;10478
+Seasonal Persistence;Zone 1 Power Consumption;1005.8402722552013;10478
+Seasonal Persistence;Zone 2 Power Consumption;1182.2853983517848;10478
+Seasonal Persistence;Zone 3 Power Consumption;673.3293258083603;10478
+Moving Average;Zone 1 Power Consumption;2493.0978624888658;10478
+Moving Average;Zone 2 Power Consumption;2085.284836860565;10478
+Moving Average;Zone 3 Power Consumption;1269.967874140294;10478
+Linear Regression;Zone 1 Power Consumption;1416.1664633769544;10478
+Linear Regression;Zone 2 Power Consumption;1158.225586021918;10478
+Linear Regression;Zone 3 Power Consumption;947.5855321542294;10478

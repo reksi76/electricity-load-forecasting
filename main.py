@@ -10,6 +10,7 @@ from analyze_thresholds import (
     plot_load_threshold_timeseries
     )
 from plot_forecast import plot_load_thresholds
+from analyze_alert_errors import analyze_alert_errors
 
 from methods import (
         persistence_method, 
@@ -70,14 +71,24 @@ def run_forecasting(data):
     return methods
 
 def run_comparison(data, methods):
-    method_comparison(
-        methods,
-        data['df'],
-        data['zones'],
-        data['horizon'],
-        data['daily_period'],
-        data['split_idx']
+    comparison = method_comparison(
+            methods,
+            data['df'],
+            data['zones'],
+            data['horizon'],
+            data['daily_period'],
+            data['split_idx']
             )
+    
+    output_file = EVALUATIONS_DIR/'forecasting_comparison.csv'
+    comparison.to_csv(
+            output_file,
+            index=False,
+            sep=';'
+            )
+    print('\nForcasting comparison:')
+    print(comparison.to_string(index=False))
+    print(f'\nSaved to {output_file}')
 
 def run_alert_evaluation(data, methods):
     all_results = []
@@ -135,12 +146,36 @@ def run_forecast_plots(data, methods):
             days=14
         )
 
+def run_error_analysis(data, methods):
+    all_results = []
+    for model_name, method_results in methods.items():
+        for result in method_results:
+            item = result.copy()
+            item['Model'] = model_name
+            all_results.append(item)
+
+    error_df = analyze_alert_errors(
+            all_results, data['thresholds']
+            )
+
+    output_file = EVALUATIONS_DIR/'alert_evaluation_Analysis'
+
+    error_df.to_csv(
+            output_file,
+            index=False,
+            sep=';'
+            )
+
+    print('\nAlert error analysis')
+    print(error_df.to_string(index=False))
+    print(f'Saved to {output_file}')
 
 def run_all(data, methods):
     run_comparison(data, methods)
     run_alert_evaluation(data, methods)
     run_threshold_analysis(data)
     run_forecast_plots(data, methods)
+    run_error_analysis(data, methods)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -155,7 +190,8 @@ def main():
                 'comparison', 
                 'alerts',
                 'threshold',
-                'plots'
+                'plots',
+                'errors'
                 ],
             default='all',
             help = 'Pipeline stage to run'
@@ -172,7 +208,8 @@ def main():
         'forecast',
         'comparison',
         'alerts',
-        'plots'
+        'plots',
+        'errors'
     ]:
         methods = run_forecasting(data)
 
@@ -186,7 +223,8 @@ def main():
         print('Forecasting completed')
 
     elif args.stage == 'comparison':
-        run_comparison(data, methods)
+        comparison = run_comparison(data, methods)
+
 
     elif args.stage == 'alerts':
         run_alert_evaluation(data, methods)
@@ -196,6 +234,9 @@ def main():
 
     elif args.stage == 'plots':
         run_forecast_plots(data, methods)
+
+    elif args.stage == 'errors':
+        run_error_analysis(data, methods)
 
 if __name__=='__main__':
     main()
