@@ -1,0 +1,13 @@
+Zone;Model;FP;FN;Total error
+Zone 1 Power Consumption;Linear Regression;63;27;90
+Zone 1 Power Consumption;Moving Average;24;28;52
+Zone 1 Power Consumption;Persistence;18;18;36
+Zone 1 Power Consumption;Seasonal Persistence;27;14;41
+Zone 2 Power Consumption;Linear Regression;80;444;524
+Zone 2 Power Consumption;Moving Average;572;571;1143
+Zone 2 Power Consumption;Persistence;410;410;820
+Zone 2 Power Consumption;Seasonal Persistence;133;150;283
+Zone 3 Power Consumption;Linear Regression;0;0;0
+Zone 3 Power Consumption;Moving Average;0;0;0
+Zone 3 Power Consumption;Persistence;0;0;0
+Zone 3 Power Consumption;Seasonal Persistence;0;0;0

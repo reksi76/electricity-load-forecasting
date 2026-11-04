@@ -60,5 +60,5 @@ def analyze_alert_errors(method_results, thresholds):
                 'Forecast error': prediction_value - actual_value
             })
 
-        return pd.DataFrame(errors)
+    return pd.DataFrame(errors)
              

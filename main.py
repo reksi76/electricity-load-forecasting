@@ -19,6 +19,12 @@ from methods import (
         linear_regression_method
         )
 
+from deviation_alerts import (
+    get_predictions,
+    calculate_deviation_thresholds,
+    evaluate_deviation_alerts
+)
+
 import pandas as pd
 
 def prepare_data():
@@ -32,6 +38,11 @@ def prepare_data():
     daily_period = 144
     split_idx = int(len(df) * 0.8)
     percentile = 95
+    
+    train_end = int(len(df) * 0.64)
+    validation_end = int(len(df) * 0.8)
+    train_start = validation_end
+
     thresholds = calculate_high_load_thresholds(
         df, zones, split_idx, percentile
     )
@@ -41,7 +52,10 @@ def prepare_data():
             'zones' : zones, 
             'horizon' : horizon, 
             'daily_period' : daily_period, 
-            'split_idx' : split_idx, 
+            'split_idx' : split_idx,
+            'train end' : train_end,
+            'validation end' : validation_end,
+            'train start' : train_start,
             'percentile' : percentile, 
             'thresholds' : thresholds
             }
@@ -170,12 +184,58 @@ def run_error_analysis(data, methods):
     print(error_df.to_string(index=False))
     print(f'Saved to {output_file}')
 
+def run_deviation_alerts(data):
+    df = data['df']
+    zones = data['zones']
+    horizon = data['horizon']
+    daily_period = data['daily period']
+    train_end = data['train end']
+    validation_end = data['validation end']
+    test_start = data['test start']
+
+    prediction = get_predictions(
+            zones,
+            horizon,
+            daily_period,
+            train_end,
+            validation_end
+            ) 
+
+    thresholds = calculate_deviation_thresholds(
+        predictions,
+        train_end,
+        validation_end,
+        percentile=95
+    )
+
+    evaluation = evaluate_deviation_alerts(
+        predictions,
+        thresholds,
+        test_start
+    )
+
+    output_file = (
+        EVALUATIONS_DIR / "deviation_alert_evaluation.csv"
+    )
+
+    evaluation.to_csv(
+        output_file,
+        index=False,
+        sep=";"
+    )
+
+    print("\nDeviation Alert Evaluation:")
+    print(evaluation.to_string(index=False))
+    print(f"\nSaved to: {output_file}")
+
+
 def run_all(data, methods):
     run_comparison(data, methods)
     run_alert_evaluation(data, methods)
     run_threshold_analysis(data)
     run_forecast_plots(data, methods)
     run_error_analysis(data, methods)
+    run_deviation_alerts(data)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -191,7 +251,8 @@ def main():
                 'alerts',
                 'threshold',
                 'plots',
-                'errors'
+                'errors',
+                'deviation'
                 ],
             default='all',
             help = 'Pipeline stage to run'
@@ -209,7 +270,8 @@ def main():
         'comparison',
         'alerts',
         'plots',
-        'errors'
+        'errors',
+        'deviation'
     ]:
         methods = run_forecasting(data)
 
@@ -237,6 +299,10 @@ def main():
 
     elif args.stage == 'errors':
         run_error_analysis(data, methods)
+
+    elif args.stage == 'errors':
+        run_deviation_alerts(data)
+
 
 if __name__=='__main__':
     main()
