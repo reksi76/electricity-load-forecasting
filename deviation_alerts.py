@@ -1,13 +1,12 @@
 import pandas as pd 
 import numpy as np 
 
-def get_predicition(
+def get_predictions(
         df, 
         zones, 
         horizon, 
         daily_period, 
         train_end, 
-        validation_end
         ):
     '''
     Generate validation and test prediction for each model
@@ -16,7 +15,7 @@ def get_predicition(
     '''
 
     results = {}
-    test_start = validation_end
+    # test_start = validation_end
 
     for zone in zones:
 
@@ -24,28 +23,29 @@ def get_predicition(
         actual = df[zone].shift(-horizon)
         prediction = df[zone]
 
-        results[('Persistance', zone)] = {
+        results[('Persistence', zone)] = {
                 'Actual' : actual, 
                 'Prediction' : prediction
                 }
 
-        # Seasonal Persistance Method
+        # Seasonal Persistence Method
         prediction = df[zone].shift(daily_period-horizon)
+        #print('iwashere')
 
-        results[('Seasonal Persistance'), zone] = {
+        results[('Seasonal Persistence', zone)] = {
                 'Actual' : actual,
                 'Prediction' : prediction
                 }
 
         # Moving Average Method
         prediction = df[zone].rolling(window=6).mean()
-        results[('Moving Average'), zone] = {
+        results[('Moving Average', zone)] = {
                 'Actual' : actual,
                 'Prediction' : prediction
                 }
 
         # Linear Regression Method
-        data = pd.DtaFrame(index=df.index)
+        data = pd.DataFrame(index=df.index)
 
         data['lag_0'] = df[zone]
         data['lag_1'] = df[zone].shift(1)
@@ -69,118 +69,116 @@ def get_predicition(
                 'Wind Speed'
                 ]
         
-        train = data[data[position]] <  train_end - horizon
+        train = data[data['position'] <  train_end - horizon]
         validation_and_test = data[
-                data[position] >=  train_end - horizon
+                data['position'] >=  train_end -        horizon
                 ]
 
         if train.empty or validation_and_test.empty:
             continue
 
-        from sk.learn.linear_model import LinearRegression
+        from sklearn.linear_model import LinearRegression
 
         model = LinearRegression()
         model.fit(train[features], train['target'])
 
         prediction = pd.Series(
-                model.predict(validation_and_test[features]),
-                index=validation_and_test.index
+                np.nan,
+                index=df.index,
+                dtype=float
+                )
+
+        prediction.loc[validation_and_test.index] = model.predict(
+                validation_and_test[features]
                 )
         
         results[('Linear Regression', zone)] = {
-                'Actual' = actual,
-                'Prediction' = prediction
+                'Actual' : actual,
+                'Prediction' : prediction
                 }
 
-        return results
+    return results
 
-    def calculate_deviation_threshold(
-            prediction,
-            validation_start,
-            validation_end,
-            percentile=95
-            ):
+def calculate_deviation_thresholds(
+        predictions,
+        validation_start,
+        validation_end,
+        percentile=95
+        ):
 
-        thresholds = {}
+    thresholds = {}
 
-        for key, result in prediction.items():
+    for key, result in predictions.items():
 
-            actual = result['Actual']
-            prediction = result['Prediction']
+        actual = result['Actual']
+        prediction = result['Prediction']
 
-            validation_actual = actual.iloc[
-                    validation_start:validation_end
-                    ]
+        validation_actual = actual.iloc[
+                validation_start:validation_end
+                ]
 
-            validation_prediction = prediction.iloc[
-                    validation_start:validation_end
-                    ]
+        validation_prediction = prediction.iloc[
+                validation_start:validation_end
+                ]
 
-            valid = (
-                    validation_actual.notna() & 
-                    validation_prediction.notna.()
-                    )
+        valid = (
+                validation_actual.notna() & 
+                validation_prediction.notna()
+                )
 
-            residuals = (
-                    validation_actual[valid]
-                    - validation_prediction[valid]
-                    ).abs()
+        residuals = (
+                validation_actual[valid]
+                - validation_prediction[valid]
+                ).abs()
 
-            if residuals.empty:
-                continue
+        if residuals.empty:
+            continue
 
-            thresholds = residuals.quartile(percentile/100)
-            thresholds[key] = threshold 
+        threshold = residuals.quantile(percentile/100)
+        thresholds[key] = threshold 
 
-        return thresholds
+    return thresholds
 
-    def evaluate_deviation_alerts(
-            prediction,
-            thresholds,
-            test_start
-            ):
+def evaluate_deviation_alerts(
+        predictions,
+        thresholds,
+        test_start
+        ):
 
-        resulta = []
-        for key, result in prediction.items():
+    results = []
+    for key, result in predictions.items():
 
-            model_name, zone = key
+        model_name, zone = key
 
-            in key not in thresholds:
-                continue
+        if key not in thresholds:
+            continue
 
-            actual = result['Actual'].iloc[test_start:]
-            prediction = result['Prediction'].iloc[test_start:]
+        actual = result['Actual'].iloc[test_start:]
+        prediction = result['Prediction'].iloc[test_start:]
 
-            valid = actual.notna() & prediction.notna()
+        valid = actual.notna() & prediction.notna()
 
-            actual = actual[valid]
-            prediction = prediction[valid]
+        actual = actual[valid]
+        prediction = prediction[valid]
 
-            residuals = (actual - prediction).abs()
+        residuals = (actual - prediction).abs()
 
-            threshold = thresholds[key]
+        threshold = thresholds[key]
 
-            alerts = residuals > threshold
+        alerts = residuals > threshold
 
-            results.append({
-                "Model": model_name,
-                "Zone": zone,
-                "Deviation Threshold": threshold,
-                "Jumlah pengujian": len(residuals),
-                "Jumlah deviation alert": int(alerts.sum()),
-                "Persentase deviation alert": (
-                    alerts.mean() * 100
-                ),
-                "Mean Absolute Deviation": residuals.mean(),
-                "Maximum Deviation": residuals.max()
-            })
+        results.append({
+            "Model": model_name,
+            "Zone": zone,
+            "Deviation Threshold": threshold,
+            "Jumlah pengujian": len(residuals),
+            "Jumlah deviation alert": int(alerts.sum()),
+            "Persentase deviation alert": (
+                alerts.mean() * 100
+            ),
+            "Mean Absolute Deviation": residuals.mean(),
+            "Maximum Deviation": residuals.max()
+        })
 
     return pd.DataFrame(results)
-
-
-
-        
-
-
-
-
+ 
