@@ -37,7 +37,7 @@ def analyze_alert_errors(method_results, thresholds):
             errors.append({
                 'Zone': zone,
                 'Model': model,
-                'Target time': timestamp,
+                'Target time': timestamp + pd.Timedelta(minutes=60),
                 'Actual': actual_value,
                 'Forecast': prediction_value,
                 'Threshold': threshold,

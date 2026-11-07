@@ -22,7 +22,8 @@ from methods import (
 from deviation_alerts import (
     get_predictions,
     calculate_deviation_thresholds,
-    evaluate_deviation_alerts
+    evaluate_deviation_alerts,
+    extract_deviation_alerts
 )
 
 import pandas as pd
@@ -154,6 +155,7 @@ def run_forecast_plots(data, methods):
             data['df'],
             method_result,
             data['zones'],
+            data['split_idx'],
             data['thresholds'],
             data['horizon'],
             method_name,
@@ -172,7 +174,7 @@ def run_error_analysis(data, methods):
             all_results, data['thresholds']
             )
 
-    output_file = EVALUATIONS_DIR/'alert_evaluation_Analysis'
+    output_file = EVALUATIONS_DIR/'alert_evaluation_Analysis.csv'
 
     error_df.to_csv(
             output_file,
@@ -203,15 +205,15 @@ def run_deviation_alerts(data):
 
     thresholds = calculate_deviation_thresholds(
         predictions,
-        train_end,
-        validation_end,
+        train_end - horizon,
+        validation_end - horizon,
         percentile=95
     )
 
     evaluation = evaluate_deviation_alerts(
         predictions,
         thresholds,
-        test_start
+        test_start - horizon
     )
 
     output_file = (
@@ -228,6 +230,21 @@ def run_deviation_alerts(data):
     print(evaluation.to_string(index=False))
     print(f"\nSaved to: {output_file}")
 
+    timestamps = df['DateTime']
+    deviation_events = extract_deviation_alerts(
+            predictions, 
+            thresholds,
+            timestamps,
+            test_start,
+            horizon,
+            interval_minutes=10
+            )
+    print(f'{deviation_events}')
+
+    deviation_events.to_csv(
+            EVALUATIONS_DIR/'deviation_alert_events.csv',
+            index=False
+            )
 
 def run_all(data, methods):
     run_comparison(data, methods)

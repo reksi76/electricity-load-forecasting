@@ -10,6 +10,7 @@ def file_info(verbose=True):
             errors='coerce'
 
             )
+    df = df.sort_values('DateTime').reset_index(drop=True)
     if verbose:
         # Check for missing values
         print('== Missing Values ===')
@@ -27,7 +28,6 @@ def file_info(verbose=True):
         print('Jumlah rentang waktu:', df['DateTime'].nunique())
 
         # Time Interval
-        df = df.sort_values('DateTime').reset_index(drop=True)
         interval = df['DateTime'].diff().dropna()
 
         print('\n=== TIME INTERVAL ===')

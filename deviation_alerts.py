@@ -181,4 +181,72 @@ def evaluate_deviation_alerts(
         })
 
     return pd.DataFrame(results)
- 
+
+
+def extract_deviation_alerts(
+        predictions,
+        thresholds,
+        timestamps,
+        test_start,
+        horizon,
+        interval_minutes
+        ):
+
+    start = test_start - horizon
+
+    events = []
+    for key, result in predictions.items():
+
+        model_name, zone = key
+
+        if key not in thresholds:
+            continue
+
+        actual = result['Actual']
+        prediction = result['Prediction']
+
+        target_times = timestamps.iloc[start:]
+
+        valid = (actual.notna() 
+                 & prediction.notna()
+                 & target_times.notna())
+
+        actual = actual[valid]
+        prediction = prediction[valid]
+
+        residuals = (prediction - actual).abs()
+        threshold = thresholds[key]
+
+        alerts = residuals > threshold 
+
+        if not alerts.any():
+            continue
+
+        alert_indeces  = alerts.index[alerts]
+
+        alert_events = pd.DataFrame({
+            'DateTime':(
+                pd.to_datetime(target_times.loc[alert_indeces].values)
+                + pd.Timedelta(
+                    minutes=horizon * interval_minutes
+                    )
+                ),
+            'Model' : model_name,
+            'Zone' : zone,
+            'Actual' : actual[alerts].values,
+            'Prediction' : prediction[alerts].values,
+            'Absolute Error' : residuals[alerts].values,
+            'Threshold' : threshold
+
+            })
+
+        events.append(alert_events)
+
+    if not events:
+        return pd.DataFrame()
+
+    return pd.concat(events, ignore_index=True).sort_values(
+            ['Zone', 'DateTime']
+            )
+
+                      
